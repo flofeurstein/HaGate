@@ -42,7 +42,7 @@ int serial_controller_open(char* serialPort)
   /*
    * Set the new options for the port...
    */
-  tcsetattr(fd, TCSANOW, &options);
+  //tcsetattr(fd, TCSANOW, &options);
 
   /*
    * Setting the character size
@@ -55,8 +55,8 @@ int serial_controller_open(char* serialPort)
    */
   options.c_cflag &= ~PARENB;
   options.c_cflag &= ~CSTOPB;
-  options.c_cflag &= ~CSIZE;
-  options.c_cflag |= CS8;
+  //options.c_cflag &= ~CSIZE;
+  //options.c_cflag |= CS8;
 
   /*
    * Setting HW flow control to enabled
@@ -73,6 +73,11 @@ int serial_controller_open(char* serialPort)
    * Choosing input
    */
   options.c_oflag &= ~OPOST; //raw
+
+  /*
+   * Set the new options for the port...
+   */
+  tcsetattr(fd, TCSANOW, &options);
 
   fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
   if (fd == -1)
@@ -133,7 +138,7 @@ int serial_controller_close(int fd)
 {
   if(close(fd) < 0)
   {
-    perror("open_port: Unable to open /dev/ttyUSB0 - ");
+    perror("close_port: Unable to close /dev/ttyUSB0 - ");
 
     return -1;
   }
