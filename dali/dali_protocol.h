@@ -1,8 +1,11 @@
 /*
- * dali_protocol.h
+ *  dali_protocol.h
  *
- *  Created on: Jun 20, 2013
- *      Author: flo
+ *  Created on: Jun 21, 2013
+ *  Author: Florian Feurstein
+ *
+ *  Description:
+ *
  */
 
 #ifndef DALI_PROTOCOL_H_
@@ -11,14 +14,10 @@
 #include "hal_types.h"
 
 /*
- * Length of forward and backward frame in bits
+ * Length of forward and backward frame in bytes
  */
-#define DALI_FWDFRAME_LEN           19
-#define DALI_BWDFRAME_LEN           11
-#define NR_BITS_IN_BYTE             8
-
-#define DALI_STARTBIT               1
-#define DALI_STOPBITS               0x3
+#define DALI_FWDFRAME_LEN           2
+#define DALI_BWDFRAME_LEN           1
 
 /*
  * Polarity of HIGH and LOW signals
@@ -46,30 +45,35 @@
 #pragma pack(1)
 typedef struct
 {
-  uint8 startBit:1;
   uint8 address;
   uint8 data;
-  uint8 stopBits:2;
 }daliFwdFrame_t;
 #pragma pack()
 
 #pragma pack(1)
 typedef struct
 {
-  uint8 startBit:1;
   uint8 data;
-  uint8 stopBits:2;
 }daliBwdFrame_t;
 #pragma pack()
 
 /*
- * dali_prot_sendManchesterEncodedFwdFrame
+ * dali_prot_sendFwdFrame
  *
- * Encode data frame via Manchester Encoding and send it to board
- * configuration in hal
+ * Send a DALI forward frame to the dali driver
  *
  * @return success state, > 0 if successful, < 0 if error
  */
-int dali_prot_sendManchesterEncodedFwdFrame(daliFwdFrame_t* pData);
+int dali_prot_sendFwdFrame(daliFwdFrame_t* pData);
+
+/*
+ * dali_prot_sendBwdFrame
+ *
+ * Send a DALI forward frame to the dali driver
+ *
+ * @param pData dali backward frame structure (data byte)
+ * @return success state, > 0 if successful, < 0 if error
+ */
+int dali_prot_sendBwdFrame(daliFwdFrame_t* pData);
 
 #endif /* DALI_PROTOCOL_H_ */

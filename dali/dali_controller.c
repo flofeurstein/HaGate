@@ -14,9 +14,9 @@
  */
 void dali_controller_turnOffBroadcast()
 {
-  daliFwdFrame_t fwdFrame = {DALI_STARTBIT, DALI_BROADCAST_CMD, DALI_CMD_OFF, DALI_STOPBITS};
+  daliFwdFrame_t fwdFrame = {DALI_BROADCAST_CMD, DALI_CMD_OFF};
 
-  dali_prot_sendManchesterEncodedFwdFrame(&fwdFrame);
+  dali_prot_sendFwdFrame(&fwdFrame);
 }
 
 /*
@@ -28,9 +28,9 @@ void dali_controller_turnOffBroadcast()
  */
 void dali_controller_setToLevelBroadcast(int level)
 {
-  daliFwdFrame_t fwdFrame = {DALI_STARTBIT, DALI_BROADCAST_ARC_LEVEL, level, DALI_STOPBITS};
+  daliFwdFrame_t fwdFrame = {DALI_BROADCAST_ARC_LEVEL, level};
 
-  dali_prot_sendManchesterEncodedFwdFrame(&fwdFrame);
+  dali_prot_sendFwdFrame(&fwdFrame);
 }
 
 /*
@@ -50,9 +50,9 @@ void dali_controller_turnOnBroadcast()
  */
 void dali_controller_levelUpBroadcast()
 {
-  daliFwdFrame_t fwdFrame = {DALI_STARTBIT, DALI_BROADCAST_CMD, DALI_CMD_UP, DALI_STOPBITS};
+  daliFwdFrame_t fwdFrame = {DALI_BROADCAST_CMD, DALI_CMD_UP};
 
-  dali_prot_sendManchesterEncodedFwdFrame(&fwdFrame);
+  dali_prot_sendFwdFrame(&fwdFrame);
 }
 
 /*
@@ -62,8 +62,8 @@ void dali_controller_levelUpBroadcast()
  */
 void dali_controller_levelDownBroadcast()
 {
-  daliFwdFrame_t fwdFrame = {DALI_STARTBIT, DALI_BROADCAST_CMD, DALI_CMD_DOWN, DALI_STOPBITS};
+  daliFwdFrame_t fwdFrame = {DALI_BROADCAST_CMD, DALI_CMD_DOWN};
 
-  dali_prot_sendManchesterEncodedFwdFrame(&fwdFrame);
+  dali_prot_sendFwdFrame(&fwdFrame);
 }
 

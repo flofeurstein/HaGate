@@ -88,6 +88,7 @@ int mt_controller_processHaGateCmd()
 
       pData = (uint8*)malloc(dataLen + CHKSM_CR_LF_SIZE);
       serial_controller_read(fd, pData, dataLen + CHKSM_CR_LF_SIZE);
+      //serial_controller_read(fd, mtHeader, dataLen + CHKSM_CR_LF_SIZE);
 
       checksum = mt_controller_calcChecksum(mtHeader, pData);
 

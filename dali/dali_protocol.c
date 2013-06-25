@@ -1,143 +1,71 @@
 /*
- * dali_protocol.c
+ *  dali_protocol.c
  *
- *  Created on: Jun 20, 2013
- *      Author: flo
+ *  Created on: Jun 21, 2013
+ *  Author: Florian Feurstein
+ *
+ *  Description:
+ *
  */
 
 #include <stdio.h>
-
+#include <fcntl.h>
+#include <unistd.h>
 #include "dali_protocol.h"
-#include "hal_board.h"
+
 
 /*
- * checkBit
+ * dali_prot_sendFwdFrame
  *
- * Checks a certain bit in a byte
+ * Send a DALI forward frame to the dali driver
  *
- * @param pos is the position of the bit to be checked
- * @param byte is the byte where a certain bit should be checked
- * @return value of the bit, 0x1 if the bit is 1 and 0x0 if the bit is 0
- */
-uint8 checkBit(uint8 pos, uint8 byte)
-{
-  return ((byte & (1 << pos)) >> pos);
-}
-
-void dali_prot_sendBitHigh()
-{
-  hal_board_daliOut(DALI_HIGH);
-  printf("1");
-}
-
-void dali_prot_sendBitLow()
-{
-  hal_board_daliOut(DALI_LOW);
-  printf("0");
-}
-
-void dali_prot_sendManchesterBit(uint8 bit)
-{
-  if(bit == 1)
-  {
-    //set output signal low
-    dali_prot_sendBitLow();
-    //wait mid-bit time
-    //set output signal high
-    dali_prot_sendBitHigh();
-    //wait mid-bit time
-  }
-  else
-  {
-    //set output signal high
-    dali_prot_sendBitHigh();
-    //wait mid-bit time
-    //set output signal low
-    dali_prot_sendBitLow();
-    //wait mid-bit time
-  }
-}
-
-void dali_prot_sendStopBits()
-{
-  dali_prot_sendBitHigh();
-  //wait mid-bit time
-  dali_prot_sendBitHigh();
-  //wait mid-bit time
-  dali_prot_sendBitHigh();
-  //wait mid-bit time
-  dali_prot_sendBitHigh();
-}
-
-/*
- * dali_prot_sendManchesterEncodedFwdFrame
- *
- * Encode data frame via Manchester Encoding and send it to board
- * configuration in hal
- *
+ * @param pData dali forward frame structure (data and address byte)
  * @return success state, > 0 if successful, < 0 if error
  */
-int dali_prot_sendManchesterEncodedFwdFrame(daliFwdFrame_t* pData)
+int dali_prot_sendFwdFrame(daliFwdFrame_t* pData)
 {
-  int success = 0;
-  int i = 0;
-  uint8 bit = 0;
+  int fd = 0;
 
-  success = hal_board_daliOutOpen();
+  fd = open("/dev/dali_drv", O_RDWR);
   //success = 1;
 
-  if(success >= 0)
+  if(fd >= 0)
   {
-    /*
-     * send startbit
-     */
-    bit = checkBit(0, pData->startBit);
-    dali_prot_sendManchesterBit(bit);
-
-    /*
-     * send address bits
-     */
-    for(i = NR_BITS_IN_BYTE-1; i >= 0; i--)
-    {
-      bit = checkBit(i, pData->address);
-      dali_prot_sendManchesterBit(bit);
-    }
-
-
-    /**********************************test***********************TODO delete********************************
-
-    if(pData->data == 0x0)
-    {
-      hal_board_daliOut(0);
-    }
-    else
-    {
-      hal_board_daliOut(1);
-    }
-
-    *********************************end test***********************TODO delete*****************************/
-
-    /*
-     * send data bits
-     */
-    for(i = NR_BITS_IN_BYTE-1; i >= 0; i--)
-    {
-      bit = checkBit(i, pData->data);
-      dali_prot_sendManchesterBit(bit);
-    }
-
-    /*
-     * send stop bits
-     */
-    dali_prot_sendStopBits();
+    write(fd, (char*)pData, DALI_FWDFRAME_LEN);
   }
 
-  success = hal_board_daliOutClose();
+  close(fd);
 
-  return success;
+  //wait at least 9.17 ms before sending another frame
+
+  return fd;
 }
 
-void dali_prot_manchesterDecoding(uint8* pData, uint8* pManchesterData)
+
+/*
+ * dali_prot_sendBwdFrame
+ *
+ * Send a DALI forward frame to the dali driver
+ *
+ * @param pData dali backward frame structure (data byte)
+ * @return success state, > 0 if successful, < 0 if error
+ */
+int dali_prot_sendBwdFrame(daliFwdFrame_t* pData)
 {
+  int fd = 0;
 
+  fd = open("/dev/dali_drv", O_RDWR);
+  //success = 1;
+
+  if(fd >= 0)
+  {
+    write(fd, (char*)pData, DALI_BWDFRAME_LEN);
+  }
+
+  close(fd);
+
+  //wait at least 9.17 ms before sending another frame
+
+  return fd;
 }
+
