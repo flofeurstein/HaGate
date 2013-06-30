@@ -11,25 +11,33 @@
 #ifndef MT_CONTROLLER_H_
 #define MT_CONTROLLER_H_
 
+#include "ZComDef.h"
 #include "hal_types.h"
 
-#define HEADER_LEN        4
-#define SOF_POS           0
-#define DATALEN_POS       1
-#define CMD_POS_HI        2
-#define CMD_POS_LO        3
+#define MT_HEADER_LEN        4
+#define MT_SOP_POS           0
+#define MT_DATALEN_POS       1
+#define MT_CMD_POS_HI        2
+#define MT_CMD_POS_LO        3
 
 /*
  * Nr of bytes for checksum, carriage return and line feed
  */
-#define CHKSM_CR_LF_SIZE  3
+#define MT_CHKSM_SIZE        1
 
 typedef struct
 {
-  uint8 level;
-  uint16 transitionTime;
-  uint8 withOnOff;
-}zclLCMoveToLevel_t;
+  uint8                 cmdID;
+} zclOnOff_t;
+
+typedef struct
+{
+  uint8                 level;          // new level to move to
+  uint16                transitionTime; // time to take to move to the new level (in seconds)
+  uint8                 withOnOff;      // with On/off command
+} zclLCMoveToLevel_t;
+
+int mt_controller_open(void (*sigHandler)(int));
 
 /*
  * mt_controller_processHaGateCmd
@@ -41,11 +49,8 @@ typedef struct
  */
 int mt_controller_processHaGateCmd();
 
-/*
- * mt_controller_stopProcessing
- *
- * Stop the processing of HaGate commands
- */
-void mt_controller_stopProcessing();
+int mt_controller_sendMessage(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8* pData);
+
+int mt_controller_close();
 
 #endif /* MT_CONTROLLER_H_ */

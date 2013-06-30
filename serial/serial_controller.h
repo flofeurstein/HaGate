@@ -16,11 +16,12 @@
 #include <string.h>  /* String function definitions */
 #include <unistd.h>  /* UNIX standard function definitions */
 #include <fcntl.h>   /* File control definitions */
-#include <errno.h>   /* Error number definitions */
 #include <termios.h> /* POSIX terminal control definitions */
 #include "hal_types.h"
 
 #define HAGATE_SERIAL_INTERFACE    "/dev/ttyUSB0"
+
+void serial_controller_setSigHandler(void (*sigHandler)(int));
 
 /*
  *  serial_controller_open

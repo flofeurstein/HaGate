@@ -17,25 +17,28 @@
  * State of processing, 0 is not processing, 1 is processing,
  * static because now it can only be accessed within this file
  */
-static int isProcessing = 0;
+//static int isProcessing = 0;
+
+static int mt_filedescriptor = 0;
 
 /*
  * mt_controller_calcChecksum
  *
  * Calculate checksum for MT frame by xor-ing each byte, leave
- * the SOF, DATALEN and CHECKSUM fields, so start with the CMD
+ * the SOF and CHECKSUM fields, so start with the CMD
  * field
  * | SOP | DATALEN | CMD | DATA  | FCS | MT frame fields
  * |  1  |    1    |  2  | 0-LEN |  1  | Bytes
  *
- * @param pMtHeader pointer to the header of the message
+ * @param cmdType is the type of the command [7:5] ored with the subsystem [4:0]
+ * @param cmdId is the command ID
+ * @param dataLen is the length of the data
  * @param pData pointer to the data of the message
  * @return the checksum of the message
  */
-int mt_controller_calcChecksum(uint8* pMtHeader, uint8* pData)
+int mt_controller_calcChecksum(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8* pData)
 {
-  int checksum = pMtHeader[CMD_POS_HI] ^ pMtHeader[CMD_POS_LO];;
-  int dataLen = pMtHeader[DATALEN_POS];
+  int checksum = cmdType ^ cmdId ^ dataLen;
   int i = 0;
 
   for(i = 0; i < dataLen; i++)
@@ -44,6 +47,13 @@ int mt_controller_calcChecksum(uint8* pMtHeader, uint8* pData)
   }
 
   return checksum;
+}
+
+int mt_controller_open(void (*sigHandler)(int))
+{
+  serial_controller_setSigHandler(sigHandler);
+  mt_filedescriptor = serial_controller_open(HAGATE_SERIAL_INTERFACE);
+  return mt_filedescriptor;
 }
 
 /*
@@ -56,41 +66,33 @@ int mt_controller_calcChecksum(uint8* pMtHeader, uint8* pData)
  */
 int mt_controller_processHaGateCmd()
 {
-  int fd = serial_controller_open(HAGATE_SERIAL_INTERFACE);
   uint8 dataLen;
-  uint8 type;
+  //uint8 type;
   uint8 subsystem;
   uint8 hagateCommand;
   uint8* pData = NULL;
-  uint8 mtHeader[HEADER_LEN];
+  uint8 mtHeader[MT_HEADER_LEN];
   int checksum;
+  int success = 0;
 
   /*
    * If the serial controller is successfully opened, start processing
    */
-  if(fd > 0)
+  if(mt_filedescriptor > 0)
   {
-    isProcessing = 1;
-  }
+    success = serial_controller_read(mt_filedescriptor, mtHeader, MT_HEADER_LEN);
 
-  while(isProcessing)
-  {
-    serial_controller_read(fd, mtHeader, HEADER_LEN);
-    //printf("0x%X ", buff[0]);
-    //printf("%c ", (char)buff[0]);
-
-    if(mtHeader[SOF_POS] == MT_UART_SOF)
+    if(mtHeader[MT_SOP_POS] == MT_UART_SOF)
     {
-      dataLen = mtHeader[DATALEN_POS];
-      type = mtHeader[CMD_POS_HI] & 0xF0;
-      subsystem = mtHeader[CMD_POS_HI] & 0xF;
-      hagateCommand = mtHeader[CMD_POS_LO];
+      dataLen = mtHeader[MT_DATALEN_POS];
+      //type = mtHeader[MT_CMD_POS_HI] & 0xF0;
+      subsystem = mtHeader[MT_CMD_POS_HI] & 0xF;
+      hagateCommand = mtHeader[MT_CMD_POS_LO];
 
-      pData = (uint8*)malloc(dataLen + CHKSM_CR_LF_SIZE);
-      serial_controller_read(fd, pData, dataLen + CHKSM_CR_LF_SIZE);
-      //serial_controller_read(fd, mtHeader, dataLen + CHKSM_CR_LF_SIZE);
+      pData = (uint8*)malloc(dataLen + MT_CHKSM_SIZE);
+      serial_controller_read(mt_filedescriptor, pData, dataLen + MT_CHKSM_SIZE);
 
-      checksum = mt_controller_calcChecksum(mtHeader, pData);
+      checksum = mt_controller_calcChecksum(mtHeader[MT_CMD_POS_HI], hagateCommand, dataLen, pData);
 
       /*
        * checking if the checksum is correct
@@ -132,17 +134,48 @@ int mt_controller_processHaGateCmd()
     }
   }
 
-  serial_controller_close(fd);
-
-  return fd;
+  return success;
 }
 
-/*
- * mt_controller_stopProcessing
- *
- * Stop the processing of HaGate commands
- */
-void mt_controller_stopProcessing()
+void mt_controller_createSPIMessage(uint8 cmdType, uint8 cmdId, uint8 datalen, uint8* pMessage, uint8* pData)
 {
-  isProcessing = 0;
+  *pMessage++ = MT_UART_SOF;
+  *pMessage++ = datalen;
+  *pMessage++ = cmdType;
+  *pMessage++ = cmdId;
+  if(pData != NULL)
+  {
+    memcpy(pMessage, pData, datalen);
+  }
+}
+
+int mt_controller_sendMessage(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8* pData)
+{
+  int success = 0;
+  uint8 checksum = 0;
+  uint8* pMessage = malloc(MT_HEADER_LEN + dataLen + MT_CHKSM_SIZE);
+
+  if(pMessage != NULL)
+  {
+    mt_controller_createSPIMessage(cmdType, cmdId, dataLen, pMessage, pData);
+
+    checksum = mt_controller_calcChecksum(cmdType, cmdId, dataLen, pData);
+
+    pMessage[MT_HEADER_LEN + dataLen] = checksum;
+
+    success = serial_controller_write(mt_filedescriptor, pMessage, (MT_HEADER_LEN + dataLen + MT_CHKSM_SIZE));
+
+    free(pMessage);
+    return success;
+  }
+  else
+  {
+    return -1;
+  }
+
+}
+
+int mt_controller_close()
+{
+  return serial_controller_close(mt_filedescriptor);
 }
