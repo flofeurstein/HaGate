@@ -12,6 +12,7 @@
 #include "serial_controller.h"
 #include "MT.h"
 #include "dali_controller.h"
+#include "MT_HAGATE.h"
 
 /*
  * State of processing, 0 is not processing, 1 is processing,
@@ -174,6 +175,43 @@ int mt_controller_sendMessage(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8* 
   }
 
 }
+
+void cpyExtAddr(uint8* pDest, uint8* pSrc)
+{
+  memcpy(pDest, pSrc, Z_EXTADDR_LEN);
+}
+
+int mt_controller_sendOnOffMessage(ZLongAddr_t* ieeeAddr, uint8 cmd)
+{
+  mtHaGateMsg_t msg;
+  cpyExtAddr((uint8*)&(msg.IEEEAddr), (uint8*)ieeeAddr);
+  msg.endpoint = SAMPLELIGHT_ENDPOINT;
+  msg.dataLen = 0;
+  msg.msgData = NULL;
+
+  if(cmd < MT_HAGATE_LIGHT_ON || cmd > MT_HAGATE_LIGHT_TOGGLE)
+  {
+    return -1;
+  }
+  return mt_controller_sendMessage((MT_RPC_CMD_AREQ | MT_RPC_SYS_HAGATE), cmd, sizeof(mtHaGateMsg_t) + msg.dataLen, (uint8*)&msg);
+}
+
+int mt_controller_sendLevelControlMessage(ZLongAddr_t* ieeeAddr, uint8 level, uint16 transTime)
+{
+  mtHaGateMsg_t msg;
+  zclLCMoveToLevel_t msgData;
+
+  msgData.level = level;
+  msgData.transitionTime = transTime;
+  msgData.withOnOff = 0;
+
+  cpyExtAddr((uint8*)&(msg.IEEEAddr), (uint8*)ieeeAddr);
+  msg.endpoint = SAMPLELIGHT_ENDPOINT;
+  msg.dataLen = sizeof(zclLCMoveToLevel_t);
+  msg.msgData = (uint8*)&msgData;
+  return mt_controller_sendMessage((MT_RPC_CMD_AREQ | MT_RPC_SYS_HAGATE), MT_HAGATE_LIGHT_ON, sizeof(mtHaGateMsg_t) + msg.dataLen, (uint8*)&msg);
+}
+
 
 int mt_controller_close()
 {

@@ -51,6 +51,10 @@ int mt_controller_processHaGateCmd();
 
 int mt_controller_sendMessage(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8* pData);
 
+int mt_controller_sendOnOffMessage(ZLongAddr_t* ieeeAddr, uint8 cmd);
+
+int mt_controller_sendLevelControlMessage(ZLongAddr_t* ieeeAddr, uint8 level, uint16 transTime);
+
 int mt_controller_close();
 
 #endif /* MT_CONTROLLER_H_ */
