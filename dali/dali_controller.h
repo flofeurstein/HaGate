@@ -1,8 +1,11 @@
 /*
- * dali_controller.h
+ *  dali_controller.h
  *
- *  Created on: Jun 20, 2013
- *      Author: flo
+ *  Created on: Jun 21, 2013
+ *  Author: Florian Feurstein
+ *
+ *  Description:
+ *
  */
 
 #ifndef DALI_CONTROLLER_H_

@@ -13,6 +13,7 @@
 #include "MT.h"
 #include "dali_controller.h"
 #include "MT_HAGATE.h"
+#include <time.h>
 
 /*
  * State of processing, 0 is not processing, 1 is processing,
@@ -50,6 +51,14 @@ int mt_controller_calcChecksum(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8*
   return checksum;
 }
 
+/*
+ * mt_controller_open
+ *
+ * Opens the serial controller and sets the signal handler callback function.
+ *
+ * @param sigHandler is the callback function for the signal handler
+ * @return 0 on success or -1 on error
+ */
 int mt_controller_open(void (*sigHandler)(int))
 {
   serial_controller_setSigHandler(sigHandler);
@@ -75,6 +84,7 @@ int mt_controller_processHaGateCmd()
   uint8 mtHeader[MT_HEADER_LEN];
   int checksum;
   int success = 0;
+  struct timespec sleepTime = {0, 1000};
 
   /*
    * If the serial controller is successfully opened, start processing
@@ -132,12 +142,26 @@ int mt_controller_processHaGateCmd()
         free(pData);
         pData = NULL;
       }
+
+      nanosleep(&sleepTime, NULL);
+      tcflush(mt_filedescriptor, TCIFLUSH);
     }
   }
 
   return success;
 }
 
+/*
+ * mt_controller_createSPIMessage
+ *
+ * Creates message in MT format.
+ *
+ * @param cmdType command type of the message
+ * @param cmdId command ID of the message
+ * @param datalen length of the data to be sent
+ * @param pMessage pointer to memory where message should be stored
+ * @param pData pointer to data that should be stored into the message
+ */
 void mt_controller_createSPIMessage(uint8 cmdType, uint8 cmdId, uint8 datalen, uint8* pMessage, uint8* pData)
 {
   *pMessage++ = MT_UART_SOF;
@@ -150,6 +174,17 @@ void mt_controller_createSPIMessage(uint8 cmdType, uint8 cmdId, uint8 datalen, u
   }
 }
 
+/*
+ * mt_controller_sendMessage
+ *
+ * Sends a MT formatted message to the serial controller.
+ *
+ * @param cmdType command type of the message
+ * @param cmdId command ID of the message
+ * @param datalen length of the data to be sent
+ * @param pData pointer to data that should be sent with the message
+ * @return success state, successful if >= 0
+ */
 int mt_controller_sendMessage(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8* pData)
 {
   int success = 0;
@@ -176,11 +211,29 @@ int mt_controller_sendMessage(uint8 cmdType, uint8 cmdId, uint8 dataLen, uint8* 
 
 }
 
+/*
+ * cpyExtAddr
+ *
+ * Copy an extended address from source to destination.
+ *
+ * @param pDest pointer to destination memory
+ * @param pSrc pointer to source memory
+ */
 void cpyExtAddr(uint8* pDest, uint8* pSrc)
 {
   memcpy(pDest, pSrc, Z_EXTADDR_LEN);
 }
 
+/*
+ * mt_controller_sendOnOffMessage
+ *
+ * Send on or off or toggle message to certain ieee address.
+ *
+ * @param ieeeAddr is the extended (IEEE) address of the node where the
+ * message should be sent to
+ * @param cmd is the command that should be sent to the node
+ * @return success state, successful if >= 0
+ */
 int mt_controller_sendOnOffMessage(ZLongAddr_t* ieeeAddr, uint8 cmd)
 {
   mtHaGateMsg_t msg;
@@ -196,6 +249,17 @@ int mt_controller_sendOnOffMessage(ZLongAddr_t* ieeeAddr, uint8 cmd)
   return mt_controller_sendMessage((MT_RPC_CMD_AREQ | MT_RPC_SYS_HAGATE), cmd, sizeof(mtHaGateMsg_t) + msg.dataLen, (uint8*)&msg);
 }
 
+/*
+ * mt_controller_sendLevelControlMessage
+ *
+ * Send level control message to certain node
+ *
+ * @param ieeeAddr is the extended (IEEE) address of the node where the
+ * message should be sent to
+ * @param level is the level the node should be set to
+ * @param transTime is the transistion time for the level change
+ * @return success state, successful if >= 0
+ */
 int mt_controller_sendLevelControlMessage(ZLongAddr_t* ieeeAddr, uint8 level, uint16 transTime)
 {
   mtHaGateMsg_t msg;
@@ -212,7 +276,13 @@ int mt_controller_sendLevelControlMessage(ZLongAddr_t* ieeeAddr, uint8 level, ui
   return mt_controller_sendMessage((MT_RPC_CMD_AREQ | MT_RPC_SYS_HAGATE), MT_HAGATE_LIGHT_ON, sizeof(mtHaGateMsg_t) + msg.dataLen, (uint8*)&msg);
 }
 
-
+/*
+ * mt_controller_close
+ *
+ * Closes the serial controller.
+ *
+ * @return 0 on success or -1 on error
+ */
 int mt_controller_close()
 {
   return serial_controller_close(mt_filedescriptor);

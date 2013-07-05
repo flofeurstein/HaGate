@@ -11,17 +11,18 @@
 #include "serial_controller.h"
 #include <sys/signal.h>
 
-void sigHandler(int status)
-{
-  volatile int i = 1;
-  i++;
-}
-
 static void (*sigHandlerCB)(int) = NULL;
 
-void serial_controller_setSigHandler(void (*sigHandler)(int))
+/*
+ * serial_controller_setSigHandler
+ *
+ * Sets signal handler callback function.
+ *
+ * @param sigHandler pointer to the callback function
+ */
+void serial_controller_setSigHandler(void (*pSigHandler)(int))
 {
-  sigHandlerCB = sigHandler;
+  sigHandlerCB = pSigHandler;
 }
 
 /*
@@ -84,7 +85,7 @@ int serial_controller_openBlocking(char* serialPort)
   options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); //raw
 
   /*
-   * Choosing input
+   * Choosing output
    */
   options.c_oflag &= ~OPOST; //raw
 
@@ -202,14 +203,15 @@ int serial_controller_open(char* serialPort)
    */
   //options.c_lflag |= (ICANON | ECHO | ECHOE); //canonical
   options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); //raw
+  //options.c_iflag &= ~(IXON | IXOFF | IXANY);//dsiable software flow control
 
   /*
-   * Choosing input
+   * Choosing output
    */
   options.c_oflag &= ~OPOST; //raw
 
-  options.c_cc[VTIME] = 0;
-  options.c_cc[VMIN] = 1;
+  options.c_cc[VTIME] = 1;//2
+  options.c_cc[VMIN] = 4;//100
   //options.c_cc[VKILL] = '\H';
 
   tcflush(fd, TCIFLUSH);

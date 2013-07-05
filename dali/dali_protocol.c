@@ -27,7 +27,6 @@ int dali_prot_sendFwdFrame(daliFwdFrame_t* pData)
   int fd = 0;
 
   fd = open("/dev/dali_drv", O_RDWR);
-  //success = 1;
 
   if(fd >= 0)
   {
@@ -35,8 +34,6 @@ int dali_prot_sendFwdFrame(daliFwdFrame_t* pData)
   }
 
   close(fd);
-
-  //wait at least 9.17 ms before sending another frame
 
   return fd;
 }
@@ -55,7 +52,6 @@ int dali_prot_sendBwdFrame(daliFwdFrame_t* pData)
   int fd = 0;
 
   fd = open("/dev/dali_drv", O_RDWR);
-  //success = 1;
 
   if(fd >= 0)
   {
@@ -63,8 +59,6 @@ int dali_prot_sendBwdFrame(daliFwdFrame_t* pData)
   }
 
   close(fd);
-
-  //wait at least 9.17 ms before sending another frame
 
   return fd;
 }

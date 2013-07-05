@@ -12,6 +12,7 @@
 #include "MT.h"
 #include "MT_HAGATE.h"
 #include <unistd.h>
+#include "dali_controller.h"
 
 static int programRunning = 1;
 static int messagePending = 0;
@@ -31,13 +32,28 @@ void signalHandler(int status)
 
 int main(int argc, char **argv)
 {
-  //uint8 i = 10;
+  //uint8 i = 0;
+
+//  while(1)
+//  {
+//    if(i == 0)
+//    {
+//      dali_controller_turnOnBroadcast();
+//      i = 1;
+//    }
+//    else
+//    {
+//      dali_controller_turnOffBroadcast();
+//      i= 0;
+//    }
+//    sleep(5);
+//  }
 
   mt_controller_open(&signalHandler);
 
   while(programRunning)
   {
-    mt_controller_sendOnOffMessage(&ieeeAddr_LSRLight, MT_HAGATE_LIGHT_TOGGLE);
+    //mt_controller_sendOnOffMessage(&ieeeAddr_LSRLight, MT_HAGATE_LIGHT_TOGGLE);
 
     if(messagePending)
     {

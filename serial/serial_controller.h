@@ -21,7 +21,14 @@
 
 #define HAGATE_SERIAL_INTERFACE    "/dev/ttyUSB0"
 
-void serial_controller_setSigHandler(void (*sigHandler)(int));
+/*
+ * serial_controller_setSigHandler
+ *
+ * Sets signal handler callback function.
+ *
+ * @param sigHandler pointer to the callback function
+ */
+void serial_controller_setSigHandler(void (*pSigHandler)(int));
 
 /*
  *  serial_controller_open
